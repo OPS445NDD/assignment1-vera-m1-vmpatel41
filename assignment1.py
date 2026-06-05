@@ -1,100 +1,102 @@
 #!/usr/bin/env python3
+"""
+OPS445 Assignment 1 - Version A
 
-'''
-OPS445 Assignment 1
-Program: assignment1.py 
-Author: "Student Name"
-Semester: "Fall/Winter/Summer YYYY"
+Program: assignment1.py
+Author: Vidhi Patel
+Student ID: 124656240
+Semester: Summer 2026
 
-The python code in this file (assignment1.py) is original work written by
-"Student Name". No code in this file is copied from any other source
-except those provided by the course instructor, including any person,
-textbook, or on-line resource. I have not shared this python script
-with anyone or anything except for submission for grading. I understand
-that the Academic Honesty Policy will be enforced and
-violators will be reported and appropriate action will be taken.
-'''
+Description:
+Calculates the number of weekend days (Saturdays and Sundays)
+between a given start date and end date (inclusive).
+
+Academic Honesty:
+Original work; no code copied except instructor-provided code.
+"""
 
 import sys
 
-def day_of_week(year: int, month: int, date: int) -> str:
-    "Based on the algorithm by Tomohiko Sakamoto"
-    days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] 
-    offset = {1:0, 2:3, 3:2, 4:5, 5:0, 6:3, 7:5, 8:1, 9:4, 10:6, 11:2, 12:4}
-    if month < 3:
-        year -= 1
-    num = (year + year//4 - year//100 + year//400 + offset[month] + date) % 7
-    return days[num]
+def leap_year(year: int) -> bool:
+    """Return True if the year is a leap year."""
+    return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
 
-
-def mon_max(month:int, year:int) -> int:
-    "returns the maximum day for a given month. Includes leap year check"
-    ...
+def mon_max(month: int, year: int) -> int:
+    """Return the maximum number of days in a given month and year."""
+    if month == 2:
+        return 29 if leap_year(year) else 28
+    days_in_month = {1:31,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31}
+    return days_in_month.get(month, 31)
 
 def after(date: str) -> str:
-    '''
-    after() -> date for next day in YYYY-MM-DD string format
+    """Return the next date in YYYY-MM-DD format."""
+    y, m, d = map(int, date.split('-'))
+    d += 1
+    if d > mon_max(m, y):
+        d = 1
+        m += 1
+    if m > 12:
+        m = 1
+        y += 1
+    return f"{y}-{m:02}-{d:02}"
 
-    Return the date for the next day of the given date in YYYY-MM-DD format.
-    This function takes care of the number of days in February for leap year.
-    This fucntion has been tested to work for year after 1582
-    '''
-    str_year, str_month, str_day = date.split('-')
-    year = int(str_year)
-    month = int(str_month)
-    day = int(str_day)
-    lyear = year % 4
-    if lyear == 0:
-        feb_max = 29 # this is a leap year
-    else:
-        feb_max = 28 # this is not a leap year
+def day_of_week(year: int, month: int, day: int) -> str:
+    """Return weekday string for a given date using Sakamoto's algorithm."""
+    t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4]
+    y = year
+    if month < 3:
+        y -= 1
+    w = (y + y//4 - y//100 + y//400 + t[month-1] + day) % 7
+    return ['sun','mon','tue','wed','thu','fri','sat'][w]
 
-    lyear = year % 100
-    if lyear == 0:
-        feb_max = 28 # this is not a leap year
+def valid_date(date_str: str) -> bool:
+    """Return True if date_str is a valid date in YYYY-MM-DD format."""
+    parts = date_str.split('-')
+    if len(parts) != 3:
+        return False
+    try:
+        y, m, d = map(int, parts)
+        # Year must be 4 digits
+        if y < 1000 or y > 9999:
+            return False
+        if m < 1 or m > 12:
+            return False
+        if d < 1 or d > mon_max(m, y):
+            return False
+        return True
+    except ValueError:
+        return False
 
-    lyear = year % 400
-    if lyear == 0:
-        feb_max = 29 # this is a leap year
-
-    mon_max = { 1:31, 2:feb_max, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
-
-    tmp_day = day + 1  # next day
-
-    if tmp_day > mon_max[month]:
-        to_day = tmp_day % mon_max[month]  # if tmp_day > this month's max, reset to 1 
-        tmp_month = month + 1
-    else:
-        to_day = tmp_day
-        tmp_month = month + 0
-
-    if tmp_month > 12:
-        to_month = 1
-        year = year + 1
-    else:
-        to_month = tmp_month + 0
-
-    next_date = f"{year}-{to_month:02}-{to_day:02}"
-
-    return next_date
-
+def day_count(start_date: str, end_date: str) -> int:
+    """Count the number of weekend days between start_date and end_date inclusive."""
+    count = 0
+    current = start_date
+    while current <= end_date:
+        y, m, d = map(int, current.split('-'))
+        if day_of_week(y, m, d) in ['sat','sun']:
+            count += 1
+        current = after(current)
+    return count
 
 def usage():
-    "Print a usage message to the user"
-    ...
-
-
-def leap_year(year: int) -> bool:
-    "return True if the year is a leap year"
-    ...
-
-def valid_date(date: str) -> bool:
-    "check validity of date and return True if valid"
-    ...
-
-def day_count(start_date: str, stop_date: str) -> int:
-    "Loops through range of dates, and returns number of weekend days"
-    ...
+    """Print usage message and exit."""
+    print("Usage: assignment1.py YYYY-MM-DD YYYY-MM-DD")
+    sys.exit(1)
 
 if __name__ == "__main__":
-    ...
+    # Check number of arguments
+    if len(sys.argv) != 3:
+        usage()
+
+    start_date, end_date = sys.argv[1], sys.argv[2]
+
+    # Ensure both dates are valid
+    if not valid_date(start_date) or not valid_date(end_date):
+        usage()
+
+    # Swap dates if start_date > end_date
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    weekends = day_count(start_date, end_date)
+    print(f"The period between {start_date} and {end_date} includes {weekends} weekend days.")
